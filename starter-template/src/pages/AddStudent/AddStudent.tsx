@@ -2,7 +2,8 @@ import { useMatch } from "react-router-dom"
 import { useMutation } from "@tanstack/react-query"
 import { addStudent } from "apis/students.api"
 import { Student } from "types/student.type"
-import { useState } from "react"
+import { useMemo, useState } from "react"
+import { isAxiosError } from "util/util"
 
 type FormStateType = Omit<Student, 'id'>
 const initialFormState: FormStateType = {
@@ -14,41 +15,65 @@ const initialFormState: FormStateType = {
   email: '',
   gender: 'other'
 }
+
+type FormError =
+  |
+  {
+    [key in keyof FormStateType]: string
+  }
+  | null
+
 export default function AddStudent() {
 
   const [fromState, setFormState] = useState<FormStateType>(initialFormState)
   const matchUrl = useMatch('/students/add')
   //  check mode add or edit
   const isModeAdd = Boolean(matchUrl)
-  const { mutate } = useMutation({
+  const { mutate, error, data , reset} = useMutation({
     mutationFn: (body: FormStateType) => {
       return addStudent(body)
     }
   })
+
+  const errorForm: FormError = useMemo(() => {
+    if (isAxiosError<{ error: FormError }>(error) && error.response?.data.error) {
+      return error.response?.data.error
+    }
+    return null
+  }, [error])
+
   // currying custom
   const handleChange = (name: keyof FormStateType) => (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormState((prev) => ({ ...prev, [name]: e.target.value }))
+    // reset form invalid email
+    if(data || error){
+      reset()
+    }
   }
+
+
+
   // handle submit
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     mutate(fromState)
 
   }
+
+
   return (
     <div>
       <h1 className='text-lg'>{isModeAdd ? 'Add' : 'Edit'} Student</h1>
       <form className='mt-6' onSubmit={handleSubmit}>
         <div className='group relative z-0 mb-6 w-full'>
           <input
-            type='email'
+            type='text'
             name='floating_email'
             id='floating_email'
             className='peer block w-full appearance-none border-0 border-b-2 border-gray-300 bg-transparent py-2.5 px-0 text-sm text-gray-900 focus:outline-none focus:ring-0 dark:border-gray-600 dark:text-black'
             placeholder=' '
             value={fromState.email}
             onChange={handleChange("email")}
-            required
           />
           <label
             htmlFor='floating_email'
@@ -56,6 +81,11 @@ export default function AddStudent() {
           >
             Email address
           </label>
+          {
+            errorForm && (
+              <p id="filled_error_help" className="mt-2 text-xs text-red-600 dark:text-red-400"><span className="font-medium">Lỗi!</span> {errorForm.email}</p>
+            )
+          }
         </div>
 
         <div className='group relative z-0 mb-6 w-full'>
