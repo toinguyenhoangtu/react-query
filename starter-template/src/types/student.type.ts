@@ -1,6 +1,6 @@
 export interface Student {
     id: number;
-    frist_name: string;
+    first_name: string;
     avatar: string;
     last_name: string;
     email: string;

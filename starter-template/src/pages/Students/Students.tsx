@@ -30,8 +30,6 @@ export default function Students() {
     queryFn: () => getStudents(page, LIMIT),
     keepPreviousData: true
   })
-  // console.log('data', data, 'isStale', isStale, 'isFetching', isFetching);
-
   const totalStudentCount = Number(data?.headers['x-total-count'] || 0)
   const totalPage = Math.ceil(totalStudentCount / LIMIT)
   return (

@@ -1,14 +1,16 @@
 import { useMatch } from "react-router-dom"
-import { useMutation } from "@tanstack/react-query"
-import { addStudent } from "apis/students.api"
+import { useMutation, useQuery } from "@tanstack/react-query"
+import { addStudent, getStudent } from "apis/students.api"
 import { Student } from "types/student.type"
 import { useMemo, useState } from "react"
 import { isAxiosError } from "util/util"
-
+import { useParams } from "react-router-dom"
+import 'react-toastify/dist/ReactToastify.css';
+import { toast } from 'react-toastify';
 type FormStateType = Omit<Student, 'id'>
 const initialFormState: FormStateType = {
   last_name: '',
-  frist_name: '',
+  first_name: '',
   avatar: '',
   btc_address: '',
   country: '',
@@ -25,11 +27,24 @@ type FormError =
 
 export default function AddStudent() {
 
+
+  const { id } = useParams();
+
+  useQuery({
+    queryKey: ['student', id],
+    queryFn: () => getStudent(id as string),
+    enabled: id !== undefined,
+    onSuccess: (data) => {
+      setFormState(data.data)
+      console.log('data', data);
+    }
+  })
+
   const [fromState, setFormState] = useState<FormStateType>(initialFormState)
   const matchUrl = useMatch('/students/add')
   //  check mode add or edit
   const isModeAdd = Boolean(matchUrl)
-  const { mutate, error, data , reset} = useMutation({
+  const { mutate, error, data, reset, mutateAsync } = useMutation({
     mutationFn: (body: FormStateType) => {
       return addStudent(body)
     }
@@ -46,17 +61,27 @@ export default function AddStudent() {
   const handleChange = (name: keyof FormStateType) => (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormState((prev) => ({ ...prev, [name]: e.target.value }))
     // reset form invalid email
-    if(data || error){
+    if (data || error) {
       reset()
     }
   }
 
-
-
   // handle submit
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  // const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  //   e.preventDefault()
+  //   mutate(fromState)
+  //   /*setFormState(initialFormState)*/
+  // }
+
+  // handle submit with async
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    mutate(fromState)
+    try {
+      const data = await mutateAsync(fromState)
+      console.log('data', data);
+    } catch (error) {
+      console.log('error', error);
+    }
 
   }
 
@@ -97,7 +122,7 @@ export default function AddStudent() {
                   type='radio'
                   name='gender'
                   value='male'
-                  checked={fromState.gender === 'male'}
+                  checked={fromState.gender === 'Male'}
                   onChange={handleChange("gender")}
                   className='h-4 w-4 border-gray-300 bg-gray-100 text-blue-600 focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:ring-offset-gray-800 dark:focus:ring-blue-600'
                 />
@@ -111,7 +136,7 @@ export default function AddStudent() {
                   type='radio'
                   name='gender'
                   value='female'
-                  checked={fromState.gender === 'female'}
+                  checked={fromState.gender === 'Female'}
                   onChange={handleChange("gender")}
                   className='h-4 w-4 border-gray-300 bg-gray-100 text-blue-600 focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:ring-offset-gray-800 dark:focus:ring-blue-600'
                 />
@@ -125,7 +150,7 @@ export default function AddStudent() {
                   type='radio'
                   name='gender'
                   value='other'
-                  checked={fromState.gender === 'other'}
+                  checked={fromState.gender === '0ther'}
                   onChange={handleChange("gender")}
                   className='h-4 w-4 border-gray-300 bg-gray-100 text-blue-600 focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:ring-offset-gray-800 dark:focus:ring-blue-600'
                 />
@@ -161,8 +186,8 @@ export default function AddStudent() {
               // pattern='[a-z][A-Z][0-9]{3}-[0-9]{3}-[0-9]{4}'
               name='first_name'
               id='first_name'
-              value={fromState.frist_name}
-              onChange={handleChange("frist_name")}
+              value={fromState.first_name}
+              onChange={handleChange("first_name")}
               className='peer block w-full appearance-none border-0 border-b-2 border-gray-300 bg-transparent py-2.5 px-0 text-sm text-gray-900 focus:border-blue-600 focus:outline-none focus:ring-0 dark:border-gray-600 dark:text-black dark:focus:border-blue-500'
               placeholder=' '
               required
