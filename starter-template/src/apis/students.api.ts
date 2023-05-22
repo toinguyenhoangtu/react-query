@@ -11,5 +11,10 @@ export const getStudents = (page: number | string, limit: number | string) => ht
 
 export const getStudent = (id: string) => http.get<Student>(`students/${id}`)
 
+//  add student with medthod post
 export const addStudent = (student: Omit<Student, 'id'>) => http
     .post<Student>('/students', student)
+
+export const updateStudent = (id: string | number, student: Student) => http.put<Student>(`students/${id}`, student)
+
+export const removeStudent = (id: string | number) => http.delete<{}>(`students/${id}`)

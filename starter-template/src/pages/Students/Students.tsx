@@ -1,11 +1,11 @@
-import { getStudents } from 'apis/students.api'
+import { getStudents, removeStudent } from 'apis/students.api'
 import { Fragment, useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 import { Students as StudentsType } from 'types/student.type'
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { useQueryString } from 'util/util'
 import classNames from 'classnames'
-
+import { toast } from "react-toastify"
 export default function Students() {
   // const [students, setStudents] = useState<StudentsType>([])
   // // loading
@@ -25,24 +25,35 @@ export default function Students() {
   const LIMIT = 10
   const queryString: { page?: string } = useQueryString()
   const page = Number(queryString.page) || 1
-  const { data, isLoading, isFetching, isStale } = useQuery({
+
+  const studentQuery = useQuery({
     queryKey: ['students', page],
     queryFn: () => getStudents(page, LIMIT),
     keepPreviousData: true
   })
-  const totalStudentCount = Number(data?.headers['x-total-count'] || 0)
+  const totalStudentCount = Number(studentQuery.data?.headers['x-total-count'] || 0)
   const totalPage = Math.ceil(totalStudentCount / LIMIT)
+
+  const deleteStudentMutation = useMutation({
+    mutationFn: (id: number | string) => removeStudent(id),
+    onSuccess: (_, id) => {
+      toast.success(`Delete success student with id: ${id} !`)
+    }
+  })
+  const handleDelete = (id: number) => {
+    deleteStudentMutation.mutateAsync(id)
+  }
   return (
     <div>
       <h1 className='text-lg'>Students</h1>
       <div className="mt-2">
         <Link to='/students/add'>
           <button type="button" className="text-white bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-blue-300 dark:focus:ring-blue-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center mr-2 mb-2">
-          Add Student
+            Add Student
           </button>
         </Link>
       </div>
-      {isLoading && (
+      {studentQuery.isLoading && (
         <div role='status' className='mt-6 animate-pulse'>
           <div className='mb-4 h-4  rounded bg-gray-200 dark:bg-gray-700' />
           <div className='mb-2.5 h-10  rounded bg-gray-200 dark:bg-gray-700' />
@@ -60,7 +71,7 @@ export default function Students() {
           <span className='sr-only'>Loading...</span>
         </div>
       )}
-      {!isLoading && (
+      {!studentQuery.isLoading && (
         <Fragment>
           <div className='relative mt-6 overflow-x-auto shadow-md sm:rounded-lg'>
             <table className='w-full text-left text-sm text-gray-500 dark:text-gray-400'>
@@ -84,7 +95,7 @@ export default function Students() {
                 </tr>
               </thead>
               <tbody>
-                {data?.data.map((student) => (
+                {studentQuery.data?.data.map((student) => (
                   <tr
                     key={student.id}
                     className='border-b bg-white hover:bg-gray-50  dark:hover:bg-gray-100'
@@ -104,7 +115,7 @@ export default function Students() {
                       >
                         Edit
                       </Link>
-                      <button className='font-medium text-red-600 dark:text-red-500'>Delete</button>
+                      <button className='font-medium text-red-600 dark:text-red-500' onClick={() => handleDelete(student.id)}>Delete</button>
                     </td>
                   </tr>
                 ))}
