@@ -9,7 +9,7 @@ export const getStudents = (page: number | string, limit: number | string) => ht
         }
     })
 
-export const getStudent = (id: string) => http.get<Student>(`students/${id}`)
+export const getStudent = (id: number | string) => http.get<Student>(`students/${id}`)
 
 //  add student with medthod post
 export const addStudent = (student: Omit<Student, 'id'>) => http

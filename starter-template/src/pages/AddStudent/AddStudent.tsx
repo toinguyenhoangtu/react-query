@@ -2,7 +2,7 @@ import { useMatch } from "react-router-dom"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { addStudent, getStudent, updateStudent } from "apis/students.api"
 import { Student } from "types/student.type"
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { isAxiosError } from "util/util"
 import { useParams } from "react-router-dom"
 import { toast } from "react-toastify"
@@ -25,20 +25,27 @@ type FormError =
   | null
 
 export default function AddStudent() {
-
+  // declare gender object
+  const gender = {
+    male: 'Male',
+    female: 'Female',
+    other: 'Other'
+  }
   const { id } = useParams();
   const [fromState, setFormState] = useState<FormStateType>(initialFormState)
   const matchUrl = useMatch('/students/add')
   const queryClient = useQueryClient()
   //  check mode add or edit
   const isModeAdd = Boolean(matchUrl)
-  useQuery({
+
+  const studentQuery = useQuery({
     queryKey: ['student', id],
     queryFn: () => getStudent(id as string),
     enabled: id !== undefined,
-    onSuccess: (data) => {
-      setFormState(data.data)
-    }
+    staleTime: 1000 * 10,
+    // onSuccess: (data) => {
+    //   setFormState(data.data)
+    // }
   })
 
   const updateStudentMutation = useMutation({
@@ -53,7 +60,6 @@ export default function AddStudent() {
       return addStudent(body)
     }
   })
-
   const errorForm: FormError = useMemo(() => {
     // custom error type
     const error = isModeAdd ? addStudentMutation.error : updateStudentMutation.error
@@ -92,6 +98,11 @@ export default function AddStudent() {
     }
   }
 
+  useEffect(() => {
+    if (studentQuery.data) {
+      setFormState(studentQuery.data.data)
+    }
+  }, [studentQuery.data])
 
   return (
     <div>
@@ -128,8 +139,8 @@ export default function AddStudent() {
                   id='gender-1'
                   type='radio'
                   name='gender'
-                  value='Male'
-                  checked={fromState.gender === 'Male'}
+                  value={gender.male}
+                  checked={fromState.gender === gender.male}
                   onChange={handleChange("gender")}
                   className='h-4 w-4 border-gray-300 bg-gray-100 text-blue-600 focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:ring-offset-gray-800 dark:focus:ring-blue-600'
                 />
@@ -142,8 +153,8 @@ export default function AddStudent() {
                   id='gender-2'
                   type='radio'
                   name='gender'
-                  value='Female'
-                  checked={fromState.gender === 'Female'}
+                  value={gender.female}
+                  checked={fromState.gender === gender.female}
                   onChange={handleChange("gender")}
                   className='h-4 w-4 border-gray-300 bg-gray-100 text-blue-600 focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:ring-offset-gray-800 dark:focus:ring-blue-600'
                 />
@@ -156,8 +167,8 @@ export default function AddStudent() {
                   id='gender-3'
                   type='radio'
                   name='gender'
-                  value='0ther'
-                  checked={fromState.gender === '0ther'}
+                  value={gender.other}
+                  checked={fromState.gender === gender.other}
                   onChange={handleChange("gender")}
                   className='h-4 w-4 border-gray-300 bg-gray-100 text-blue-600 focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:ring-offset-gray-800 dark:focus:ring-blue-600'
                 />
