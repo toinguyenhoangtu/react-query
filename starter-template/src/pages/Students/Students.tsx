@@ -1,6 +1,6 @@
 import { getStudents, removeStudent } from 'apis/students.api'
 import { Fragment, useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import { Students as StudentsType } from 'types/student.type'
 import { QueryClient, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useQueryString } from 'util/util'
@@ -27,6 +27,7 @@ export default function Students() {
   const [showFormConfirm, setShowFormConfirm] = useState(false)
   const page = Number(queryString.page) || 1
   const queryClient = useQueryClient()
+  const history = useNavigate()
   const studentQuery = useQuery({
     queryKey: ['students', page],
     queryFn: () => getStudents(page, LIMIT),
@@ -40,11 +41,14 @@ export default function Students() {
     onSuccess: (_, id) => {
       toast.success(`Delete success student with id: ${id} !`)
       // Query sẽ thực hiện một yêu cầu mới để lấy dữ liệu mới => studentQuery
-      queryClient.invalidateQueries({ queryKey: ['students', page] })
+      queryClient.invalidateQueries({ queryKey: ['students', page], exact: true })
+      setShowFormConfirm(false)
+      // redirect to add student
+      history('/students')
     }
   })
   const handleDelete = (id: number) => {
-      deleteStudentMutation.mutate(id)
+    deleteStudentMutation.mutateAsync(id)
   }
   return (
     <div>
